@@ -18,5 +18,5 @@ int main() {
     Board board;
     board.set_state_new();
     Move move1("a2a4");
-    std::cout << ((int)move1.src) << ',' << ((int)move1.dest) << std::endl;
+    std::cout << bb_to_string(board.move_dests(8)) << std::endl;
 }

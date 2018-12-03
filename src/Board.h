@@ -43,6 +43,12 @@ public: //State initializers
 public: //Operations
     Board make_move(Move move);
     std::string to_string();
+    /**
+     * Determines if the opponent side (the side opposing the current side to move) has a given square in check
+     * @param square The number of the square to test, with 0 being a8, 7 being h8, and 63 being h1
+     * @return Whether the square is in check or not.
+     */
+    bool in_check(uint8_t square);
 
 public: //Bit board generators
     BB wPawns();
@@ -58,6 +64,13 @@ public: //Bit board generators
     BB bQueens();
     BB bKings();
     BB passantTarget();
+    BB move_dests(uint8_t src);
+    BB dest_pawn(uint8_t src, boardID side);
+    BB dest_knight(uint8_t src, boardID side);
+    BB dest_bishop(uint8_t src, boardID side);
+    BB dest_rook(uint8_t src, boardID side);
+    BB dest_queen(uint8_t src, boardID side);
+    BB dest_king(uint8_t src, boardID side);
 };
 
 #endif //SPODE_BOARD_H

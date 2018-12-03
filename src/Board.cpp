@@ -247,3 +247,150 @@ std::string Board::to_string() {
     }
     return out;
 }
+
+bool Board::in_check(uint8_t square) {
+    return false;
+}
+
+BB Board::move_dests(uint8_t src) {
+    boardID sideBB; //The bit board containing the source piece
+    if(pieceBB[whiteBB][src]){
+        sideBB = whiteBB;
+    } else if(pieceBB[blackBB][src]){
+        sideBB = blackBB;
+    } else {
+        return BB();
+    }
+
+    if(pieceBB[pawnBB][src]){
+        return dest_pawn(src, sideBB);
+    } else if(pieceBB[knightBB][src]){
+        return dest_knight(src, sideBB);
+    } else if(pieceBB[bishopBB][src]){
+        return dest_bishop(src, sideBB);
+    } else if(pieceBB[rookBB][src]){
+        return dest_rook(src, sideBB);
+    } else if(pieceBB[queenBB][src]){
+        return dest_queen(src, sideBB);
+    } else if(pieceBB[kingBB][src]){
+        return dest_king(src, sideBB);
+    } else {
+        throw std::logic_error("Missing piece!");
+    }
+}
+
+BB Board::dest_pawn(uint8_t src, Board::boardID side) {
+    BB out;
+    if(side==whiteBB){
+        out[src+8] = ~(pieceBB[blackBB][src+8] || pieceBB[whiteBB][src+8]);
+        if(src%8>0){//Diagonal west
+            out[src+8-1] = pieceBB[blackBB][src+8-1];
+            if(state.side == 0){
+                out[src+8-1] = out[src+8-1] | passantTarget()[src+8-1];
+            }
+        }
+        if(src%8<7){//Diagonal east
+            out[src+8+1] = pieceBB[blackBB][src+8+1];
+            if(state.side == 0){
+                out[src+8+1] = out[src+8+1] | passantTarget()[src+8+1];
+            }
+        }
+        if(src/8==1){
+            out[src+16] = ~(pieceBB[blackBB][src+16] || pieceBB[whiteBB][src+16]);
+        }
+    } else {
+        out[src-8] = ~(pieceBB[blackBB][src-8] || pieceBB[whiteBB][src-8]);
+        if(src%8>0){//Diagonal west
+            out[src-8-1] = pieceBB[blackBB][src-8-1];
+            if(state.side == 0){
+                out[src-8-1] = out[src-8-1] | passantTarget()[src-8-1];
+            }
+        }
+        if(src%8<7){//Diagonal east
+            out[src-8+1] = pieceBB[blackBB][src-8+1];
+            if(state.side == 0){
+                out[src-8+1] = out[src-8+1] | passantTarget()[src-8+1];
+            }
+        }
+        if(src/8==6){
+            out[src-16] = ~(pieceBB[blackBB][src-16] || pieceBB[whiteBB][src-16]);
+        }
+    }
+    return out;
+}
+
+BB Board::dest_knight(uint8_t src, Board::boardID side) {
+    BB out;
+    if(src > 15 && src%8 < 7){//nne
+        out[src-16+1] = true;
+    }
+    if(src > 15 && src%8 > 0){//nnw
+        out[src-16-1] = true;
+    }
+    if(src < 48 && src%8 < 7){//sse
+        out[src+16+1] = true;
+    }
+    if(src < 48 && src%8 > 0){//ssw
+        out[src+16-1] = true;
+    }
+    if(src > 7  && src%8 < 6){//nee
+        out[src-8+2] = true;
+    }
+    if(src < 56 && src%8 < 6){//see
+        out[src+8+2] = true;
+    }
+    if(src > 7  && src%8 > 1){//nww
+        out[src-8-2] = true;
+    }
+    if(src < 56 && src%8 > 1){//sww
+        out[src-8-2] = true;
+    }
+    out &= ~pieceBB[side];
+    return out;
+}
+
+BB Board::dest_bishop(uint8_t src, Board::boardID side) {
+    return Board::BB();
+}
+
+BB Board::dest_rook(uint8_t src, Board::boardID side) {
+    return Board::BB();
+}
+
+BB Board::dest_queen(uint8_t src, Board::boardID side) {
+    return dest_bishop(src, side) | dest_rook(src, side);
+}
+
+BB Board::dest_king(uint8_t src, Board::boardID side) {
+    bool north = src > 7;
+    bool south = src < 56;
+    bool east = src%8 < 7;
+    bool west = src%8 > 0;
+    BB out;
+    if(north){
+        out[src-8] = true;
+    }
+    if(south){
+        out[src+8] = true;
+    }
+    if(east){
+        out[src+1] = true;
+    }
+    if(west){
+        out[src-1] = true;
+    }
+    if(north&&east){
+        out[src-8+1] = true;
+    }
+    if(south&&east){
+        out[src+8+1] = true;
+    }
+    if(north&&west){
+        out[src-8-1] = true;
+    }
+    if(south&&west){
+        out[src+8-1] = true;
+    }
+    out &= ~pieceBB[side];
+    return out;
+}
