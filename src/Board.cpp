@@ -350,10 +350,49 @@ BB Board::dest_knight(uint8_t src, Board::boardID side) {
 }
 
 BB Board::dest_bishop(uint8_t src, Board::boardID side) {
+    BB out;
     return Board::BB();
 }
 
 BB Board::dest_rook(uint8_t src, Board::boardID side) {
+    BB out;
+    BB valid = ~pieceBB[side];
+    BB other = ~pieceBB[side==whiteBB?blackBB:whiteBB];
+    uint8_t dest;
+    bool flag;
+
+    flag = false;
+    dest = src;
+    for(dest-=8; dest < 64 && !flag; dest-=8){
+        out[dest]=valid[dest];
+        flag = other[dest];
+    }
+
+    flag = false;
+    dest = src;
+    for(dest+=8; dest < 64 && !flag; dest+=8){
+        out[dest]=valid[dest];
+        flag = other[dest];
+    }
+
+    if(src%8!=7) {
+        flag = false;
+        dest = src;
+        for (dest++; dest%8 <= 7 && !flag; dest++) {
+            out[dest] = valid[dest];
+            flag = other[dest];
+        }
+    }
+
+    if(src%8!=0) {
+        flag = false;
+        dest = src;
+        for (dest--; dest%8 >= 0 && !flag; dest--) {
+            out[dest] = valid[dest];
+            flag = other[dest];
+        }
+    }
+
     return Board::BB();
 }
 
