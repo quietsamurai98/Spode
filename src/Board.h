@@ -3,6 +3,7 @@
 #define SPODE_BOARD_H
 
 #include <bitset>
+#include <vector>
 #include "Move.h"
 
 class Board {
@@ -49,6 +50,7 @@ public: //Operations
      * @return Whether the square is in check or not.
      */
     bool in_check(uint8_t square);
+    std::vector<Move> get_moves();
 
 public: //Bit board generators
     BB wPawns();
@@ -64,13 +66,14 @@ public: //Bit board generators
     BB bQueens();
     BB bKings();
     BB passantTarget();
-    BB move_dests(uint8_t src);
-    BB dest_pawn(uint8_t src, boardID side);
+    BB pseudo_move_dests(uint8_t src, bool pawns_always_attack = false, bool pawns_only_attack = false);
+    BB dest_pawn(uint8_t src, boardID side, bool pawns_always_attack = false, bool pawns_only_attack = false);
     BB dest_knight(uint8_t src, boardID side);
     BB dest_bishop(uint8_t src, boardID side);
     BB dest_rook(uint8_t src, boardID side);
     BB dest_queen(uint8_t src, boardID side);
     BB dest_king(uint8_t src, boardID side);
+    BB attacked_squares(); ///Generates all squares being attacked by the opposing side
 };
 
 #endif //SPODE_BOARD_H

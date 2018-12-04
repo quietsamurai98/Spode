@@ -14,9 +14,34 @@ std::string bb_to_string(BB in){
     return out;
 }
 
+std::vector<Move> perft(int depth){
+    std::vector<Board> parents;
+    std::vector<Board> children;
+    std::vector<Move> out;
+    parents.push_back(*new Board);
+    parents[0].set_state_new();
+
+    for(int i = 0; i < depth; i++){
+        out.clear();
+        for(Board b : parents){
+            auto ms = b.get_moves();
+            out.insert(out.end(), ms.begin(), ms.end());
+            for(auto m : ms){
+                children.push_back(b.make_move(m));
+            }
+        }
+        parents.clear();
+        parents = children;
+        children.clear();
+    }
+
+    return out;
+}
+
 int main() {
     Board board;
     board.set_state_new();
-    Move move1("a2a4");
-    std::cout << bb_to_string(board.move_dests(8)) << std::endl;
+    std::cout << board.to_string() << std::endl;
+    std::cout << perft(3).size() << std::endl;
+    auto moves = perft(3);
 }

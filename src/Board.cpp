@@ -1,6 +1,7 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
 #include "Board.h"
 
 using BB = std::bitset<64>; ///BB = Bit board. BB[0] = a8, BB[1] = b8, BB[8] = a7
@@ -81,14 +82,14 @@ BB Board::passantTarget() {
 
 void Board::set_state_new() {
     state = {0b1111, 0b0, 0b0, 0b0};
-    pieceBB[whiteBB] = 0x000000000000ffff;
-    pieceBB[blackBB] = 0xffff000000000000;
+    pieceBB[whiteBB] = 0xffff000000000000;
+    pieceBB[blackBB] = 0x000000000000ffff;
     pieceBB[pawnBB]  = 0x00ff00000000ff00;
     pieceBB[rookBB]  = 0x8100000000000081;
     pieceBB[knightBB]= 0x4200000000000042;
     pieceBB[bishopBB]= 0x2400000000000024;
-    pieceBB[queenBB] = 0x0800000000000010;
-    pieceBB[kingBB]  = 0x1000000000000008;
+    pieceBB[queenBB] = 0x0800000000000008;
+    pieceBB[kingBB]  = 0x1000000000000010;
 }
 
 Board Board::make_move(Move move) {
@@ -248,11 +249,22 @@ std::string Board::to_string() {
     return out;
 }
 
-bool Board::in_check(uint8_t square) {
-    return false;
+BB Board::attacked_squares(){
+    BB attacks;
+    boardID other = state.side==0?blackBB:whiteBB;
+    for(uint8_t i = 0; i < 64; i++){
+        if(pieceBB[other][i]){
+            attacks |= pseudo_move_dests(i, true, true);
+        }
+    }
+    return attacks;
 }
 
-BB Board::move_dests(uint8_t src) {
+bool Board::in_check(uint8_t square) {
+    return attacked_squares()[square];
+}
+
+BB Board::pseudo_move_dests(uint8_t src, bool pawns_always_attack, bool pawns_only_attack) {
     boardID sideBB; //The bit board containing the source piece
     if(pieceBB[whiteBB][src]){
         sideBB = whiteBB;
@@ -263,7 +275,7 @@ BB Board::move_dests(uint8_t src) {
     }
 
     if(pieceBB[pawnBB][src]){
-        return dest_pawn(src, sideBB);
+        return dest_pawn(src, sideBB, pawns_always_attack, pawns_only_attack);
     } else if(pieceBB[knightBB][src]){
         return dest_knight(src, sideBB);
     } else if(pieceBB[bishopBB][src]){
@@ -279,40 +291,56 @@ BB Board::move_dests(uint8_t src) {
     }
 }
 
-BB Board::dest_pawn(uint8_t src, Board::boardID side) {
+BB Board::dest_pawn(uint8_t src, Board::boardID side, bool pawns_always_attack, bool pawns_only_attack) {
     BB out;
-    if(side==whiteBB){
-        out[src+8] = ~(pieceBB[blackBB][src+8] || pieceBB[whiteBB][src+8]);
+    if(side==blackBB){
+        if(!pawns_only_attack){
+            out[src+8] = ~(pieceBB[blackBB][src+8] || pieceBB[whiteBB][src+8]);
+        }
         if(src%8>0){//Diagonal west
-            out[src+8-1] = pieceBB[blackBB][src+8-1];
+            out[src+8-1] = pieceBB[whiteBB][src+8-1];
+            if(pawns_always_attack){
+                out[src+8-1] = ~pieceBB[blackBB][src+8-1];
+            }
             if(state.side == 0){
                 out[src+8-1] = out[src+8-1] | passantTarget()[src+8-1];
             }
         }
         if(src%8<7){//Diagonal east
-            out[src+8+1] = pieceBB[blackBB][src+8+1];
+            out[src+8+1] = pieceBB[whiteBB][src+8+1];
+            if(pawns_always_attack){
+                out[src+8+1] = ~pieceBB[blackBB][src+8+1];
+            }
             if(state.side == 0){
                 out[src+8+1] = out[src+8+1] | passantTarget()[src+8+1];
             }
         }
-        if(src/8==1){
+        if(src/8==1 && !pawns_only_attack){
             out[src+16] = ~(pieceBB[blackBB][src+16] || pieceBB[whiteBB][src+16]);
         }
     } else {
-        out[src-8] = ~(pieceBB[blackBB][src-8] || pieceBB[whiteBB][src-8]);
+        if(!pawns_only_attack) {
+            out[src - 8] = ~(pieceBB[blackBB][src - 8] || pieceBB[whiteBB][src - 8]);
+        }
         if(src%8>0){//Diagonal west
             out[src-8-1] = pieceBB[blackBB][src-8-1];
+            if(pawns_always_attack){
+                out[src-8-1] = ~pieceBB[whiteBB][src-8-1];
+            }
             if(state.side == 0){
                 out[src-8-1] = out[src-8-1] | passantTarget()[src-8-1];
             }
         }
         if(src%8<7){//Diagonal east
             out[src-8+1] = pieceBB[blackBB][src-8+1];
+            if(pawns_always_attack){
+                out[src-8+1] = ~pieceBB[whiteBB][src-8+1];
+            }
             if(state.side == 0){
                 out[src-8+1] = out[src-8+1] | passantTarget()[src-8+1];
             }
         }
-        if(src/8==6){
+        if(src/8==6 && !pawns_only_attack){
             out[src-16] = ~(pieceBB[blackBB][src-16] || pieceBB[whiteBB][src-16]);
         }
     }
@@ -343,7 +371,7 @@ BB Board::dest_knight(uint8_t src, Board::boardID side) {
         out[src-8-2] = true;
     }
     if(src < 56 && src%8 > 1){//sww
-        out[src-8-2] = true;
+        out[src+8-2] = true;
     }
     out &= ~pieceBB[side];
     return out;
@@ -351,13 +379,49 @@ BB Board::dest_knight(uint8_t src, Board::boardID side) {
 
 BB Board::dest_bishop(uint8_t src, Board::boardID side) {
     BB out;
-    return Board::BB();
+    BB valid = ~pieceBB[side];
+    BB occupied = pieceBB[whiteBB] | pieceBB[blackBB];
+    uint8_t dest;
+    bool flag;
+
+    if(src%8!=7) {
+        flag = false;
+        dest = src;
+        for (dest-=7; dest%8 <= 7 && dest<64 && !flag; dest-=7) {
+            out[dest] = valid[dest];
+            flag = occupied[dest];
+        }
+
+        flag = false;
+        dest = src;
+        for (dest+=9; dest%8 <= 7 && dest<64 && !flag; dest+=9) {
+            out[dest] = valid[dest];
+            flag = occupied[dest];
+        }
+    }
+
+    if(src%8!=0) {
+        flag = false;
+        dest = src;
+        for (dest-=9; dest%8 >= 0 && dest<64 && !flag; dest-=9) {
+            out[dest] = valid[dest];
+            flag = occupied[dest];
+        }
+
+        flag = false;
+        dest = src;
+        for (dest+=7; dest%8 >= 0 && dest<64 && !flag; dest+=7) {
+            out[dest] = valid[dest];
+            flag = occupied[dest];
+        }
+    }
+    return out;
 }
 
 BB Board::dest_rook(uint8_t src, Board::boardID side) {
     BB out;
     BB valid = ~pieceBB[side];
-    BB other = ~pieceBB[side==whiteBB?blackBB:whiteBB];
+    BB occupied = pieceBB[whiteBB] | pieceBB[blackBB];
     uint8_t dest;
     bool flag;
 
@@ -365,35 +429,36 @@ BB Board::dest_rook(uint8_t src, Board::boardID side) {
     dest = src;
     for(dest-=8; dest < 64 && !flag; dest-=8){
         out[dest]=valid[dest];
-        flag = other[dest];
+        flag = occupied[dest];
     }
 
     flag = false;
     dest = src;
     for(dest+=8; dest < 64 && !flag; dest+=8){
         out[dest]=valid[dest];
-        flag = other[dest];
+        flag = occupied[dest];
     }
 
     if(src%8!=7) {
         flag = false;
         dest = src;
-        for (dest++; dest%8 <= 7 && !flag; dest++) {
+        for (dest++; dest%8 != 0 && !flag; dest++) {
             out[dest] = valid[dest];
-            flag = other[dest];
+            flag = occupied[dest];
         }
     }
 
     if(src%8!=0) {
         flag = false;
         dest = src;
-        for (dest--; dest%8 >= 0 && !flag; dest--) {
+        for (dest--; dest%8 != 7 && !flag; dest--) {
             out[dest] = valid[dest];
-            flag = other[dest];
+            flag = occupied[dest];
         }
     }
 
-    return Board::BB();
+
+    return out;
 }
 
 BB Board::dest_queen(uint8_t src, Board::boardID side) {
@@ -432,4 +497,38 @@ BB Board::dest_king(uint8_t src, Board::boardID side) {
     }
     out &= ~pieceBB[side];
     return out;
+}
+
+std::vector<Move> Board::get_moves() {
+    BB sideBB = pieceBB[(state.side == 0)?(whiteBB):(blackBB)];
+    std::vector<Move> moves;
+    for(uint8_t i = 0; i < 64; i++){
+        if(sideBB[i]) {
+            BB moveBB = pseudo_move_dests(i);
+            for (uint8_t j = 0; j < 64; j++) {
+                if (moveBB[j]) {
+                    if ((j / 8) % 7 == 0 && pieceBB[pawnBB][i]) {
+                        moves.push_back(*new Move(i, j, 0));
+                        moves.push_back(*new Move(i, j, 1));
+                        moves.push_back(*new Move(i, j, 2));
+                        moves.push_back(*new Move(i, j, 3));
+                    } else {
+                        moves.push_back(*new Move(i, j));
+                    }
+                }
+            }
+        }
+    }
+    std::vector<Move> out;
+    for(Move m : moves){
+        Board b = this->make_move(m);
+        b.state.side = this -> state.side;
+        BB king = (b.pieceBB[(state.side == 0)?(whiteBB):(blackBB)]&b.pieceBB[kingBB]);
+        uint8_t kingPos = 0;
+        for(kingPos = 0; kingPos<64 && king[kingPos]==false; kingPos++){}
+        if(!b.in_check(kingPos)){
+            out.push_back(m);
+        }
+    }
+    return moves;
 }
