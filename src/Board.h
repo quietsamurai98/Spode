@@ -36,6 +36,7 @@ public: //Member variables
 
 public: //Constructors, destructors
     Board();
+    Board(std::string fen);
     ~Board();
 
 public: //State initializers
@@ -44,12 +45,15 @@ public: //State initializers
 public: //Operations
     Board make_move(Move move);
     std::string to_string();
+
     /**
-     * Determines if the opponent side (the side opposing the current side to move) has a given square in check
-     * @param square The number of the square to test, with 0 being a8, 7 being h8, and 63 being h1
-     * @return Whether the square is in check or not.
+     * Determines if the OTHER side could take the specified square
+     * @param square
+     * @param side
+     * @return
      */
-    bool in_check(uint8_t square);
+    bool square_under_attack(uint8_t square, boardID side);
+
     std::vector<Move> get_moves();
 
 public: //Bit board generators
@@ -65,15 +69,33 @@ public: //Bit board generators
     BB bRooks();
     BB bQueens();
     BB bKings();
+    BB wbEmpty();
+    BB wbEnemy(boardID side);
     BB passantTarget();
-    BB pseudo_move_dests(uint8_t src, bool pawns_always_attack = false, bool pawns_only_attack = false);
-    BB dest_pawn(uint8_t src, boardID side, bool pawns_always_attack = false, bool pawns_only_attack = false);
-    BB dest_knight(uint8_t src, boardID side);
-    BB dest_bishop(uint8_t src, boardID side);
-    BB dest_rook(uint8_t src, boardID side);
-    BB dest_queen(uint8_t src, boardID side);
-    BB dest_king(uint8_t src, boardID side);
-    BB attacked_squares(); ///Generates all squares being attacked by the opposing side
+
+    BB quiet_pawn(uint8_t src, boardID side);
+    BB quiet_knight(uint8_t src, boardID side);
+    BB quiet_bishop(uint8_t src, boardID side);
+    BB quiet_rook(uint8_t src, boardID side);
+    BB quiet_queen(uint8_t src, boardID side);
+    BB quiet_king(uint8_t src, boardID side);
+    BB castle_king(uint8_t src, boardID side);
+
+    BB tactical_pawn(uint8_t src, boardID side);
+    BB tactical_knight(uint8_t src, boardID side);
+    BB tactical_bishop(uint8_t src, boardID side);
+    BB tactical_rook(uint8_t src, boardID side);
+    BB tactical_queen(uint8_t src, boardID side);
+    BB tactical_king(uint8_t src, boardID side);
+
+    /**
+     * Finds the pseudo legal move destinations for the piece belonging to the specified side at the specified source square.
+     * If the piece at the source square does not belong to the specified side, it is treated like an empty square (no moves).
+     * @param src
+     * @param side
+     * @return
+     */
+    BB find_dests(uint8_t src, boardID side);
 };
 
 #endif //SPODE_BOARD_H
