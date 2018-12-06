@@ -2,8 +2,15 @@
 #include <stdexcept>
 #include "Move.h"
 
+uintmax_t Move::count = 0;
+
+Move::~Move() {
+    count--;
+}
 
 Move::Move() {
+    count++;
+
     this->src = 0;
     this->dest = 0;
     this->promotion = 0;
@@ -12,6 +19,8 @@ Move::Move() {
 }
 
 Move::Move(uint8_t src, uint8_t dest){
+    count++;
+
     this->src = src;
     this->dest = dest;
     this->promotion = 0;
@@ -20,6 +29,8 @@ Move::Move(uint8_t src, uint8_t dest){
 }
 
 Move::Move(uint8_t src, uint8_t dest, uint8_t promotion){
+    count++;
+
     this->src = src;
     this->dest = dest;
     this->promotion = promotion;
@@ -27,7 +38,19 @@ Move::Move(uint8_t src, uint8_t dest, uint8_t promotion){
     this->null_move = 0;
 }
 
+Move::Move(const Move &other) {
+    count++;
+
+    src = other.src;
+    dest = other.dest;
+    promotion = other.promotion;
+    promo_enabled = other.promo_enabled;
+    null_move = other.null_move;
+}
+
 Move::Move(std::string an) {
+    count++;
+
     if(an == "0000"){
         this->src = 0;
         this->dest = 0;

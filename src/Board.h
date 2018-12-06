@@ -3,7 +3,7 @@
 #define SPODE_BOARD_H
 
 #include <bitset>
-#include <vector>
+#include <list>
 #include "Move.h"
 
 class Board {
@@ -34,9 +34,11 @@ public: //Member variables
     BB pieceBB[8];
     State state;
 
-public: //Constructors, destructors
+public: //Constructors, destructors, instance counter
+    static uintmax_t count;
     Board();
-    Board(std::string fen);
+    explicit Board(std::string fen);
+    Board(const Board &other);
     ~Board();
 
 public: //State initializers
@@ -54,7 +56,9 @@ public: //Operations
      */
     bool square_under_attack(uint8_t square, boardID side);
 
-    std::vector<Move> get_moves();
+    std::list<Move> get_moves();
+
+    bool sanity_check();
 
 public: //Bit board generators
     BB wPawns();

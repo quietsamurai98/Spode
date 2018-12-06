@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
+#include <sstream>
 #include "Board.h"
 
 using BB = std::bitset<64>; ///BB = Bit board. BB[0] = a8, BB[1] = b8, BB[8] = a7
@@ -9,10 +10,22 @@ using CR = uint8_t; ///CR = Castle rights. CR&0b00001000 = white long castle, CR
 using EP = uint8_t; ///EP = En passant target file. 0 = a, 7 = h
 using SM = uint8_t; ///SM = Side to move. 0 = white, 1 = black.
 
+uintmax_t Board::count = 0;
 
-Board::Board() = default;
+Board::Board(){
+    count++;
+}
+
+Board::Board(const Board &other) {
+    count++;
+    state = other.state;
+    for (int i = 0; i < 8; ++i) {
+        pieceBB[i] = other.pieceBB[i];
+    }
+}
 
 Board::Board(std::string fen){
+    count++;
     unsigned long i = 0, j = 0;
     for (; i < fen.length() && fen[i]!=' '; ++i) {
         switch(fen[i]){
@@ -130,10 +143,21 @@ Board::Board(std::string fen){
         }
         i++;
     }
+    i++;
+    if(fen[i]!='-'){
+        state.passant_exist = 1;
+        state.passant_file = (uint8_t)(fen[i]-'a');
+        i++;
+    } else {
+        state.passant_exist = 0;
+    }
+    i++;
     ///TODO Move counters
 }
 
-Board::~Board() = default;
+Board::~Board(){
+    count--;
+}
 
 BB Board::wPawns() {
     return pieceBB[pawnBB] & pieceBB[whiteBB];
@@ -197,15 +221,15 @@ BB Board::wbEnemy(boardID side){
 
 BB Board::passantTarget() {
     BB out;
-    uint64_t offset;
-    if(state.side == 1){
-        //Black to move
-        offset = 0x10ULL+state.passant_file;
-    } else {
-        //white to move
-        offset = 0x28ULL+state.passant_file;
+    if(state.passant_exist) {
+        if (state.side == 1) {
+            //Black to move
+            out[40 + state.passant_file] = true;
+        } else {
+            //white to move
+            out[16 + state.passant_file] = true;
+        }
     }
-    out|=(state.passant_exist?1ull:0ull)<<offset;
     return out;
 }
 
@@ -238,17 +262,21 @@ Board Board::make_move(Move move) {
         } else if (out.pieceBB[kingBB][move.src]) {
             srcBB = kingBB;
         } else {
-            throw std::logic_error("Tried to move non-existent piece!");
+            std::stringstream msg;
+            msg << "TRIED TO MOVE NON EXISTENT PIECE!\n";
+            msg << "Initial state:\n" << to_string() << "\n";
+            msg << "Move: " << move.to_string();
+            throw std::logic_error(msg.str());
         }
 
         bool castle = (srcBB == kingBB) && (move.src % 8 == 4) && (move.dest % 8 == 2 || move.dest % 8 == 6);
-        bool passant = (srcBB == pawnBB) && out.passantTarget()[move.dest];
+        bool passant = (srcBB == pawnBB) && (move.dest % 8 != move.src % 8) && out.wbEmpty()[move.dest];
+        bool capture = false;
 
         if (castle) {
             if (move.src == 4) {//black
+                out.state.castle_rights &= 0b1100;
                 if (move.dest == 2) { //long
-                    out.state.castle_rights &= 0b1101;
-
                     out.pieceBB[kingBB][4] = false;
                     out.pieceBB[blackBB][4] = false;
                     out.pieceBB[kingBB][2] = true;
@@ -259,8 +287,6 @@ Board Board::make_move(Move move) {
                     out.pieceBB[rookBB][3] = true;
                     out.pieceBB[blackBB][3] = true;
                 } else { //short
-                    out.state.castle_rights &= 0b1110;
-
                     out.pieceBB[kingBB][4] = false;
                     out.pieceBB[blackBB][4] = false;
                     out.pieceBB[kingBB][6] = true;
@@ -272,9 +298,8 @@ Board Board::make_move(Move move) {
                     out.pieceBB[blackBB][5] = true;
                 }
             } else {//white
+                out.state.castle_rights &= 0b0011;
                 if (move.dest == 58) { //long
-                    out.state.castle_rights &= 0b0111;
-
                     out.pieceBB[kingBB][60] = false;
                     out.pieceBB[whiteBB][60] = false;
                     out.pieceBB[kingBB][58] = true;
@@ -285,7 +310,6 @@ Board Board::make_move(Move move) {
                     out.pieceBB[rookBB][59] = true;
                     out.pieceBB[whiteBB][59] = true;
                 } else { //short
-                    out.state.castle_rights &= 0b1011;
                     out.pieceBB[kingBB][60] = false;
                     out.pieceBB[whiteBB][60] = false;
                     out.pieceBB[kingBB][62] = true;
@@ -298,44 +322,73 @@ Board Board::make_move(Move move) {
                 }
             }
         } else {
-            bool capture = false;
-            boardID destBB = srcBB; //Assume there wasn't a capture
+            boardID capBB = srcBB; //Assume there wasn't a capture
 
             boardID sideBB = (out.state.side == 0) ? (whiteBB) : (blackBB);
             boardID opntBB = (out.state.side == 1) ? (whiteBB) : (blackBB); //Opponent bit board
 
-            if (out.pieceBB[whiteBB][move.dest] || out.pieceBB[blackBB][move.dest]) {
+            if (out.pieceBB[opntBB][move.dest]) {
                 //A piece was captured. Find it's bit board
                 capture = true;
-                if (out.pieceBB[pawnBB][move.src]) {
-                    destBB = pawnBB;
-                } else if (out.pieceBB[knightBB][move.src]) {
-                    destBB = knightBB;
-                } else if (out.pieceBB[bishopBB][move.src]) {
-                    destBB = bishopBB;
-                } else if (out.pieceBB[rookBB][move.src]) {
-                    destBB = rookBB;
-                } else if (out.pieceBB[queenBB][move.src]) {
-                    destBB = queenBB;
-                } else if (out.pieceBB[kingBB][move.src]) {
-                    destBB = kingBB;
+                if (out.pieceBB[pawnBB][move.dest]) {
+                    capBB = pawnBB;
+                } else if (out.pieceBB[knightBB][move.dest]) {
+                    capBB = knightBB;
+                } else if (out.pieceBB[bishopBB][move.dest]) {
+                    capBB = bishopBB;
+                } else if (out.pieceBB[rookBB][move.dest]) {
+                    capBB = rookBB;
+                } else if (out.pieceBB[queenBB][move.dest]) {
+                    capBB = queenBB;
+                } else if (out.pieceBB[kingBB][move.dest]) {
+                    capBB = kingBB;
                 }
-            } else if (srcBB == pawnBB &&
-                       ((move.src / 8 == 1 && move.dest / 8 == 3) || (move.src / 8 == 6 && move.dest / 8 == 4))) {
+            }
+            if (srcBB == pawnBB && std::abs(move.src / 8 - move.dest / 8) == 2){
                 out.state.passant_exist = 1;
-                out.state.passant_file = move.src % ((PF) 8u);
+                out.state.passant_file = (PF)(move.src % 8);
             } else {
                 out.state.passant_exist = 0;
             }
             //Move the piece
+            //Pick up the piece
             out.pieceBB[sideBB][move.src] = false;
             out.pieceBB[srcBB][move.src] = false;
+
+            //Clear the destination square
+            out.pieceBB[capBB][move.dest] = false;
+            out.pieceBB[opntBB][move.dest] = false;
+
+            //Put down the piece
             out.pieceBB[sideBB][move.dest] = true;
-            out.pieceBB[destBB][move.dest] = true;
+            out.pieceBB[srcBB][move.dest] = true;
+
+            if (srcBB == rookBB) {
+                //Update castle rights in case a rook was moved
+                if (move.src == 0) {
+                    out.state.castle_rights &= 0b1101;
+                } else if (move.src == 7) {
+                    out.state.castle_rights &= 0b1110;
+                } else if (move.src == 56) {
+                    out.state.castle_rights &= 0b0111;
+                } else if (move.src == 63) {
+                    out.state.castle_rights &= 0b1011;
+                }
+            }
+
+            if (srcBB == kingBB) {
+                //Update castle rights in case a king was moved
+                if (move.src == 4) {
+                    out.state.castle_rights &= 0b1101;
+                    out.state.castle_rights &= 0b1110;
+                } else if (move.src == 60) {
+                    out.state.castle_rights &= 0b0111;
+                    out.state.castle_rights &= 0b1011;
+                }
+            }
 
             if (capture) {
-                out.pieceBB[opntBB][move.dest] = false;
-                if (destBB == rookBB) {
+                if (capBB == rookBB) {
                     //Update castle rights in case a rook was captured
                     if (move.dest == 0) {
                         out.state.castle_rights &= 0b1101;
@@ -348,18 +401,26 @@ Board Board::make_move(Move move) {
                     }
                 }
             } else if (passant) {
-                uint8_t cap = move.dest;
-                if (out.state.side) {
-                    cap += 8;
-                } else {
-                    cap -= 8;
-                }
+                int cap = move.dest%8 + 8*(move.src/8);
                 out.pieceBB[opntBB][cap] = false;
                 out.pieceBB[pawnBB][cap] = false;
             }
+
+        }
+
+        if(!out.sanity_check()){
+            std::stringstream msg;
+            msg << "SANITY CHECK FAILED: ";
+            msg << "capture=" << (capture?"true":"false") << ", ";
+            msg << "castle=" << (castle?"true":"false") << ", ";
+            msg << "passant=" << (passant?"true":"false") << "\n";
+            msg << "Initial state:\n" << to_string() << "\n";
+            msg << "Move: " << move.to_string();
+            throw std::logic_error(msg.str());
         }
     }
     out.state.side++;
+
     return out;
 }
 
@@ -389,10 +450,10 @@ std::string Board::to_string() {
     return out;
 }
 
-std::vector<Move> Board::get_moves() {
+std::list<Move> Board::get_moves() {
     boardID side = (state.side == 0)?(whiteBB):(blackBB);
     BB sideBB = pieceBB[side];
-    std::vector<Move> moves;
+    std::list<Move> moves;
     if((sideBB & pieceBB[kingBB]).any()) {
         for (uint8_t i = 0; i < 64; i++) {
             if (sideBB[i]) {
@@ -400,22 +461,22 @@ std::vector<Move> Board::get_moves() {
                 for (uint8_t j = 0; j < 64; j++) {
                     if (moveBB[j]) {
                         if ((j / 8) % 7 == 0 && pieceBB[pawnBB][i]) {
-                            moves.push_back(*new Move(i, j, 0));
-                            moves.push_back(*new Move(i, j, 1));
-                            moves.push_back(*new Move(i, j, 2));
-                            moves.push_back(*new Move(i, j, 3));
+                            moves.push_back(Move(i, j, 0));
+                            moves.push_back(Move(i, j, 1));
+                            moves.push_back(Move(i, j, 2));
+                            moves.push_back(Move(i, j, 3));
                         } else {
-                            moves.push_back(*new Move(i, j));
+                            moves.push_back(Move(i, j));
                         }
                     }
                 }
             }
         }
     }
-    std::vector<Move> out;
+    std::list<Move> out;
     for(Move m : moves){
-        Board b = this->make_move(m);
-        b.state.side = this -> state.side;
+        Board b = make_move(m);
+        b.state.side = state.side;
         BB king = (b.pieceBB[(state.side == 0)?(whiteBB):(blackBB)]&b.pieceBB[kingBB]);
         uint8_t kingPos = 0;
         for(kingPos = 0; kingPos<64 && king[kingPos]==false; kingPos++){}
@@ -425,7 +486,6 @@ std::vector<Move> Board::get_moves() {
     }
     return out;
 }
-
 BB Board::quiet_pawn(uint8_t src, boardID side){
     auto move_offset = (int8_t)((side == whiteBB) ? -8 : 8);
     auto home_rank = (uint8_t)((side==whiteBB)?6:1);
@@ -437,7 +497,7 @@ BB Board::quiet_pawn(uint8_t src, boardID side){
     }
     return out;
 }
-BB Board::quiet_knight(uint8_t src, boardID side){
+BB Board::quiet_knight(uint8_t src, boardID){
     BB valid = wbEmpty();
     BB out;
     // .A.B.
@@ -472,7 +532,7 @@ BB Board::quiet_knight(uint8_t src, boardID side){
     out &= valid;
     return out;
 }
-BB Board::quiet_bishop(uint8_t src, boardID side){
+BB Board::quiet_bishop(uint8_t src, boardID){
     BB out;
     BB valid = wbEmpty();
     int src_r = src/8;
@@ -493,7 +553,7 @@ BB Board::quiet_bishop(uint8_t src, boardID side){
 
     return out;
 }
-BB Board::quiet_rook(uint8_t src, boardID side){
+BB Board::quiet_rook(uint8_t src, boardID){
     BB out;
     BB valid = wbEmpty();
     int src_r = src/8;
@@ -517,6 +577,7 @@ BB Board::quiet_rook(uint8_t src, boardID side){
 BB Board::quiet_queen(uint8_t src, boardID side){
     return quiet_bishop(src, side) | quiet_rook(src, side);
 }
+
 BB Board::quiet_king(uint8_t src, boardID side){
     bool north = src > 7;
     bool south = src < 56;
@@ -556,33 +617,32 @@ BB Board::quiet_king(uint8_t src, boardID side){
 BB Board::castle_king(uint8_t src, boardID side) {
     BB out;
     BB empty = wbEmpty();
-    if(side == whiteBB){
-        if(state.castle_rights & 0b1000){
+    if(side == whiteBB && src == 60){
+        if(state.castle_rights & 0b1000u){
             //Long white castle
             out[58] = empty[57] & empty[58] & empty[59] & !square_under_attack(58, side) & !square_under_attack(59, side) & !square_under_attack(60, side);
         }
-        if(state.castle_rights & 0b0100){
+        if(state.castle_rights & 0b0100u){
             //Short white castle
             out[62] = empty[61] & empty[62] & !square_under_attack(60, side) & !square_under_attack(61, side) & !square_under_attack(62, side);
         }
-    } else {
-        if(state.castle_rights & 0b0010){
+    } else if(side == blackBB && src == 4){
+        if(state.castle_rights & 0b0010u){
             //Long black castle
             out[2] = empty[1] & empty[2] & empty[3] & !square_under_attack(2, side) & !square_under_attack(3, side) & !square_under_attack(4, side);
         }
-        if(state.castle_rights & 0b0001){
+        if(state.castle_rights & 0b0001u){
             //Short black castle
             out[6] = empty[5] & empty[6] & !square_under_attack(4, side) & !square_under_attack(5, side) & !square_under_attack(6, side);
         }
     }
     return out;
 }
-
 BB Board::tactical_pawn(uint8_t src, boardID side){
     auto move_offset = (int8_t)((side == whiteBB) ? -8 : 8);
     BB out;
     BB valid = wbEnemy(side);
-    if((side == whiteBB && state.side == 1) || (side == blackBB && state.side == 0)){
+    if((side == whiteBB && state.side == 0) || (side == blackBB && state.side == 1)){
         valid |= passantTarget();
     }
     if(src%8!=0){ //left
@@ -705,6 +765,7 @@ BB Board::tactical_rook(uint8_t src, boardID side){
 BB Board::tactical_queen(uint8_t src, boardID side){
     return tactical_rook(src, side) | tactical_bishop(src, side);
 }
+
 BB Board::tactical_king(uint8_t src, boardID side){
     bool north = src > 7;
     bool south = src < 56;
@@ -771,5 +832,32 @@ BB Board::find_dests(uint8_t src, boardID side) {
     } else {
         return BB();
     }
+}
+
+bool Board::sanity_check() {
+    boardID pieceIDs[6] = {pawnBB, knightBB, rookBB, bishopBB, queenBB, kingBB};
+
+    BB multiple_occupants;
+    for(auto a : pieceIDs){
+        for(auto b : pieceIDs){
+            if(a!=b){
+                multiple_occupants |= pieceBB[a] & pieceBB[b];
+            }
+        }
+    }
+    if(multiple_occupants.any()){
+        std::cout << "SANITY CHECK FAILURE: MULTIPLE PIECES ON SQUARE" << std::endl;
+        return false;
+    }
+
+    BB all_pieces;
+    for(auto a : pieceIDs){
+        all_pieces |= pieceBB[a];
+    }
+    if((all_pieces ^ (pieceBB[whiteBB] | pieceBB[blackBB])).any()){
+        std::cout << "SANITY CHECK FAILURE: COLORLESS PIECE / PIECELESS COLOR" << std::endl;
+        return false;
+    }
+    return true;
 }
 
