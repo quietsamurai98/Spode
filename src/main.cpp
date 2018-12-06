@@ -1,7 +1,9 @@
 #include <iostream>
+#include <chrono>
 #include "Board.h"
 #include "Utils.h"
 #include "Perft.h"
+#include "Searcher.h"
 
 
 using BB = std::bitset<64>; ///BB = Bit board. BB[0] = a8, BB[1] = b8, BB[8] = a7
@@ -106,7 +108,11 @@ int main() {
     Board board;
     board.set_state_new();
     Perft tester(board);
-    for (int i = 1; i <= 6; ++i) {
-        std::cout << i << '\t' << tester.perft(i) << std::endl;
+    Searcher searcher(board);
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 1; i <= 100; ++i) {
+        //std::cout << i << '\t' << tester.perft(i) << std::endl;
+        auto end = std::chrono::steady_clock::now();
+        std::cout << i << '\t' << searcher.get_best_move(i, true).to_string() << '\t' << "Elapsed time in nanoseconds : " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << " ns" << std::endl;
     }
 }

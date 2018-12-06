@@ -5,11 +5,11 @@
 uintmax_t Move::count = 0;
 
 Move::~Move() {
-    count--;
+    //count--;
 }
 
 Move::Move() {
-    count++;
+    //count++;
 
     this->src = 0;
     this->dest = 0;
@@ -19,7 +19,7 @@ Move::Move() {
 }
 
 Move::Move(uint8_t src, uint8_t dest){
-    count++;
+    //count++;
 
     this->src = src;
     this->dest = dest;
@@ -29,7 +29,7 @@ Move::Move(uint8_t src, uint8_t dest){
 }
 
 Move::Move(uint8_t src, uint8_t dest, uint8_t promotion){
-    count++;
+    //count++;
 
     this->src = src;
     this->dest = dest;
@@ -39,7 +39,7 @@ Move::Move(uint8_t src, uint8_t dest, uint8_t promotion){
 }
 
 Move::Move(const Move &other) {
-    count++;
+    //count++;
 
     src = other.src;
     dest = other.dest;
@@ -49,7 +49,7 @@ Move::Move(const Move &other) {
 }
 
 Move::Move(std::string an) {
-    count++;
+    //count++;
 
     if(an == "0000"){
         this->src = 0;

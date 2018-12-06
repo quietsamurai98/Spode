@@ -56,7 +56,9 @@ public: //Operations
      */
     bool square_under_attack(uint8_t square, boardID side);
 
-    std::list<Move> get_moves();
+    std::list<Move> get_moves(bool tactical_only = false);
+    bool in_checkmate();
+    bool in_stalemate();
 
     bool sanity_check();
 

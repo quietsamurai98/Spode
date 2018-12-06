@@ -13,11 +13,11 @@ using SM = uint8_t; ///SM = Side to move. 0 = white, 1 = black.
 uintmax_t Board::count = 0;
 
 Board::Board(){
-    count++;
+    //count++;
 }
 
 Board::Board(const Board &other) {
-    count++;
+    //count++;
     state = other.state;
     for (int i = 0; i < 8; ++i) {
         pieceBB[i] = other.pieceBB[i];
@@ -25,7 +25,7 @@ Board::Board(const Board &other) {
 }
 
 Board::Board(std::string fen){
-    count++;
+    //count++;
     unsigned long i = 0, j = 0;
     for (; i < fen.length() && fen[i]!=' '; ++i) {
         switch(fen[i]){
@@ -156,7 +156,7 @@ Board::Board(std::string fen){
 }
 
 Board::~Board(){
-    count--;
+    //count--;
 }
 
 BB Board::wPawns() {
@@ -450,29 +450,36 @@ std::string Board::to_string() {
     return out;
 }
 
-std::list<Move> Board::get_moves() {
+std::list<Move> Board::get_moves(bool tactical_only) {
     boardID side = (state.side == 0)?(whiteBB):(blackBB);
     BB sideBB = pieceBB[side];
+    BB enemBB = wbEnemy(side);
     std::list<Move> moves;
-    if((sideBB & pieceBB[kingBB]).any()) {
-        for (uint8_t i = 0; i < 64; i++) {
-            if (sideBB[i]) {
-                BB moveBB = find_dests(i, side);
-                for (uint8_t j = 0; j < 64; j++) {
-                    if (moveBB[j]) {
-                        if ((j / 8) % 7 == 0 && pieceBB[pawnBB][i]) {
-                            moves.push_back(Move(i, j, 0));
-                            moves.push_back(Move(i, j, 1));
-                            moves.push_back(Move(i, j, 2));
-                            moves.push_back(Move(i, j, 3));
-                        } else {
-                            moves.push_back(Move(i, j));
-                        }
+    if((pieceBB[kingBB]&pieceBB[whiteBB]).count()!=1 || (pieceBB[kingBB]&pieceBB[blackBB]).count()!=1) {
+        std::stringstream msg;
+        msg << "BOARD IS MISSING ONE OR MORE KINGS!\n";
+        msg << "Board layout:\n" << to_string() << "\n";
+        throw std::logic_error(msg.str());
+    }
+
+    for (uint8_t i = 0; i < 64; i++) {
+        if (sideBB[i]) {
+            BB moveBB = find_dests(i, side);
+            for (uint8_t j = 0; j < 64; j++) {
+                if (moveBB[j]) {
+                    if ((j / 8) % 7 == 0 && pieceBB[pawnBB][i]) {
+                        moves.push_back(Move(i, j, 0));
+                        moves.push_back(Move(i, j, 1));
+                        moves.push_back(Move(i, j, 2));
+                        moves.push_back(Move(i, j, 3));
+                    } else if(!tactical_only || enemBB[j]) {
+                        moves.push_back(Move(i, j));
                     }
                 }
             }
         }
     }
+
     std::list<Move> out;
     for(Move m : moves){
         Board b = make_move(m);
@@ -486,6 +493,23 @@ std::list<Move> Board::get_moves() {
     }
     return out;
 }
+
+
+bool Board::in_checkmate() {
+    //If there are no legal moves, and the king is in check, that's a checkmate.
+    BB king = (pieceBB[(state.side == 0)?(whiteBB):(blackBB)]&pieceBB[kingBB]);
+    uint8_t kingPos = 0;
+    for(kingPos = 0; kingPos<64 && king[kingPos]==false; kingPos++){}
+    return square_under_attack(kingPos, (state.side == 0)?(whiteBB):(blackBB)) && get_moves().empty();
+}
+bool Board::in_stalemate() {
+    //If there are no legal moves, and the king is not in check, that's a stalemate.
+    BB king = (pieceBB[(state.side == 0)?(whiteBB):(blackBB)]&pieceBB[kingBB]);
+    uint8_t kingPos = 0;
+    for(kingPos = 0; kingPos<64 && king[kingPos]==false; kingPos++){}
+    return !square_under_attack(kingPos, (state.side == 0)?(whiteBB):(blackBB)) && get_moves().empty();
+}
+
 BB Board::quiet_pawn(uint8_t src, boardID side){
     auto move_offset = (int8_t)((side == whiteBB) ? -8 : 8);
     auto home_rank = (uint8_t)((side==whiteBB)?6:1);
@@ -835,6 +859,7 @@ BB Board::find_dests(uint8_t src, boardID side) {
 }
 
 bool Board::sanity_check() {
+    return true;
     boardID pieceIDs[6] = {pawnBB, knightBB, rookBB, bishopBB, queenBB, kingBB};
 
     BB multiple_occupants;
@@ -860,4 +885,5 @@ bool Board::sanity_check() {
     }
     return true;
 }
+
 
