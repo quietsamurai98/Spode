@@ -1,10 +1,10 @@
 #include <iostream>
 #include <chrono>
 #include "Board.h"
-#include "Utils.h"
+#include "Util.h"
 #include "Perft.h"
 #include "Searcher.h"
-
+#include "AssertionFailure.h"
 
 using BB = std::bitset<64>; ///BB = Bit board. BB[0] = a8, BB[1] = b8, BB[8] = a7
 
@@ -68,10 +68,10 @@ struct perft_divide_pair {
 };
 
 std::list<perft_divide_pair> perft_divide(Board board, int depth){
+    ASSERT(depth < 2, "Invalid argument: perft_divide requires a depth of two or more.");
+
     std::list<perft_divide_pair> out;
-    if(depth < 2){
-        throw std::out_of_range("perft_divide only works for n>=2");
-    }
+
     for(auto m : board.get_moves()){
         perft_divide_pair p;
         p.parent = m;
@@ -104,15 +104,37 @@ void p_test(const Board &board, int depth){
     std::cout << "Depth " << depth << '\t' << perft(board, depth) << std::endl;
 }
 
-int main() {
-    Board board;
-    board.set_state_new();
-    Perft tester(board);
-    Searcher searcher(board);
-    auto start = std::chrono::steady_clock::now();
-    for (int i = 1; i <= 100; ++i) {
-        //std::cout << i << '\t' << tester.perft(i) << std::endl;
-        auto end = std::chrono::steady_clock::now();
-        std::cout << i << '\t' << searcher.get_best_move(i, true).to_string() << '\t' << "Elapsed time in nanoseconds : " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << " ns" << std::endl;
+void sanity(){
+    for(auto i = 0; i < 8; i++){
+        std::cout << bb_to_string(Board::lookup_rank(i)) << std::endl;
     }
+    for(auto i = 0; i < 8; i++){
+        std::cout << bb_to_string(Board::lookup_file(i)) << std::endl;
+    }
+}
+
+void byte_swap(){
+    Board board("1krnbn2/1q4b1/1p4r1/1p3p2/1BPPP3/1N3R2/1Q4B1/1K4R1 w - -");
+    std::cout << board.to_string() << std::endl << std::endl;
+    for(auto i = 0; i < 8; i++){
+        board.pieceBB[i] = __builtin_bswap64(board.pieceBB[i].to_ullong());
+    }
+    std::cout << board.to_string() << std::endl;
+}
+
+void ab_test(int trials){
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 1; i <= trials; ++i) {
+        Board board;
+        board.set_state_new();
+        Searcher searcher(board);
+        searcher.get_best_move(7, false);
+        std::cout << ((i*100)/trials) << '%' << std::endl;
+    }
+    auto end = std::chrono::steady_clock::now();
+    std::cout << "Average time per search was " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/trials << " milliseconds." << std::endl;
+}
+
+int main() {
+    ab_test(10);
 }

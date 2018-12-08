@@ -116,7 +116,7 @@ Board::Board(std::string fen){
             case '/':
                 break;
             default:
-                throw std::logic_error("INVALID FEN");
+                ASSERT_FAIL("FEN board contains an invalid character!");
         }
     }
     state.side = (fen[++i]=='w'?(SM)0:(SM)1);
@@ -139,7 +139,7 @@ Board::Board(std::string fen){
             case '-':
                 break;
             default:
-                throw std::logic_error("INVALID FEN");
+                ASSERT_FAIL("FEN castle rights contains invalid character!");
         }
         i++;
     }
@@ -159,23 +159,23 @@ Board::~Board(){
     //count--;
 }
 
-BB Board::wPawns() {
+BB Board::wPawns() const {
     return pieceBB[pawnBB] & pieceBB[whiteBB];
 }
 
-BB Board::wKnights() {
+BB Board::wKnights() const {
     return pieceBB[knightBB] & pieceBB[whiteBB];
 }
 
-BB Board::wBishops() {
+BB Board::wBishops() const {
     return pieceBB[bishopBB] & pieceBB[whiteBB];
 }
 
-BB Board::wRooks() {
+BB Board::wRooks() const {
     return pieceBB[rookBB] & pieceBB[whiteBB];
 }
 
-BB Board::wQueens() {
+BB Board::wQueens() const {
     return pieceBB[queenBB] & pieceBB[whiteBB];
 }
 
@@ -183,23 +183,23 @@ BB Board::wKings() {
     return pieceBB[kingBB] & pieceBB[whiteBB];
 }
 
-BB Board::bPawns() {
+BB Board::bPawns() const {
     return pieceBB[pawnBB] & pieceBB[blackBB];
 }
 
-BB Board::bKnights() {
+BB Board::bKnights() const {
     return pieceBB[knightBB] & pieceBB[blackBB];
 }
 
-BB Board::bBishops() {
+BB Board::bBishops() const {
     return pieceBB[bishopBB] & pieceBB[blackBB];
 }
 
-BB Board::bRooks() {
+BB Board::bRooks() const {
     return pieceBB[rookBB] & pieceBB[blackBB];
 }
 
-BB Board::bQueens() {
+BB Board::bQueens() const {
     return pieceBB[queenBB] & pieceBB[blackBB];
 }
 
@@ -266,7 +266,7 @@ Board Board::make_move(Move move) {
             msg << "TRIED TO MOVE NON EXISTENT PIECE!\n";
             msg << "Initial state:\n" << to_string() << "\n";
             msg << "Move: " << move.to_string();
-            throw std::logic_error(msg.str());
+            ASSERT_FAIL(msg.str().c_str());
         }
 
         bool castle = (srcBB == kingBB) && (move.src % 8 == 4) && (move.dest % 8 == 2 || move.dest % 8 == 6);
@@ -416,7 +416,7 @@ Board Board::make_move(Move move) {
             msg << "passant=" << (passant?"true":"false") << "\n";
             msg << "Initial state:\n" << to_string() << "\n";
             msg << "Move: " << move.to_string();
-            throw std::logic_error(msg.str());
+            ASSERT_FAIL(msg.str().c_str());
         }
     }
     out.state.side++;
@@ -459,7 +459,7 @@ std::list<Move> Board::get_moves(bool tactical_only) {
         std::stringstream msg;
         msg << "BOARD IS MISSING ONE OR MORE KINGS!\n";
         msg << "Board layout:\n" << to_string() << "\n";
-        throw std::logic_error(msg.str());
+        ASSERT_FAIL(msg.str().c_str());
     }
 
     for (uint8_t i = 0; i < 64; i++) {
@@ -468,12 +468,12 @@ std::list<Move> Board::get_moves(bool tactical_only) {
             for (uint8_t j = 0; j < 64; j++) {
                 if (moveBB[j]) {
                     if ((j / 8) % 7 == 0 && pieceBB[pawnBB][i]) {
-                        moves.push_back(Move(i, j, 0));
-                        moves.push_back(Move(i, j, 1));
-                        moves.push_back(Move(i, j, 2));
-                        moves.push_back(Move(i, j, 3));
+                        moves.emplace_back(i, j, 0);
+                        moves.emplace_back(i, j, 1);
+                        moves.emplace_back(i, j, 2);
+                        moves.emplace_back(i, j, 3);
                     } else if(!tactical_only || enemBB[j]) {
-                        moves.push_back(Move(i, j));
+                        moves.emplace_back(i, j);
                     }
                 }
             }
@@ -851,7 +851,7 @@ BB Board::find_dests(uint8_t src, boardID side) {
         } else if(pieceBB[kingBB][src]){
             return tactical_king(src, side) | quiet_king(src, side);
         } else {
-            throw std::logic_error("Empty square is owned by side!");
+            ASSERT_FAIL("Empty square is owned by side!");
         }
     } else {
         return BB();

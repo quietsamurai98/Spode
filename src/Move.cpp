@@ -1,5 +1,6 @@
 
 #include <stdexcept>
+#include "AssertionFailure.h"
 #include "Move.h"
 
 uintmax_t Move::count = 0;
@@ -77,7 +78,13 @@ Move::Move(std::string an) {
                     promotion = 3;
                     break;
                 default:
-                    throw std::logic_error("Invalid promotion!");
+                    char msg[] = "The promotion character in move \"12345\" is invalid.\nValid promotion characters are be q, n, r, or b.";
+                    msg[33] = an[0];
+                    msg[34] = an[1];
+                    msg[35] = an[2];
+                    msg[36] = an[3];
+                    msg[37] = an[4];
+                    ASSERT_FAIL(msg);
             }
         }
     }

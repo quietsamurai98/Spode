@@ -1,15 +1,13 @@
 
 #include "Perft.h"
+#include "AssertionFailure.h"
 
 uintmax_t Perft::Node::count = 0;
 
 void Perft::populate_node(Perft::Node *n) {
-    if(n == nullptr){
-        throw std::invalid_argument("Cannot populate null node!");
-    }
-    if(!(n -> children.empty())){
-        throw std::invalid_argument("Node is already populated!");
-    }
+    ASSERT(n != nullptr, "A null node cannot be populated!");
+
+    ASSERT(n -> children.empty(),"Node is already populated!");
 
     std::stack<Move> moves;
     Node *cur = n;
@@ -34,18 +32,17 @@ uintmax_t Perft::perft(uint depth) {
 }
 
 uintmax_t Perft::perft(Node *node, uint depth, uint target) {
+    ASSERT(depth <= target, "DEPTH EXCEEDED TARGET!");
     if(node -> children.empty()){
         populate_node(node);
     }
     if(depth == target){
         return node -> children.size();
-    } else if(depth < target) {
+    } else { //depth < target
         uintmax_t sum = 0;
         for(auto c : node -> children){
             sum += perft(c, depth+1, target);
         }
         return sum;
-    } else {
-        throw std::logic_error("DEPTH EXCEEDS TARGET!");
     }
 }

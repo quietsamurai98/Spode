@@ -4,7 +4,9 @@
 
 #include <bitset>
 #include <list>
+#include "AssertionFailure.h"
 #include "Move.h"
+#include "Util.h"
 
 class Board {
 public: //Type aliases and definitions
@@ -29,6 +31,21 @@ public: //Type aliases and definitions
         queenBB = 6,
         kingBB  = 7
     };
+
+public: //BB lookup
+    /**
+     * Gets a BB where each square is set iff it is in the specified rank/row.
+     * NOTE: rank must be on interval [0..7]. 0 -> top row, 7 -> bottom row.
+     */
+    static BB lookup_rank(int8_t rank){
+        ASSERT(Util::on_range(rank, 0, 7), "RANK MUST BE ON INTERVAL [0..7]");
+        return BB(0xffULL << (rank << 3));
+    }
+
+    static BB lookup_file(int8_t file){
+        ASSERT(Util::on_range(file, 0, 7), "FILE MUST BE ON INTERVAL [0..7]");
+        return BB(0x0101010101010101ULL << file);
+    }
 
 public: //Member variables
     BB pieceBB[8];
@@ -63,17 +80,17 @@ public: //Operations
     bool sanity_check();
 
 public: //Bit board generators
-    BB wPawns();
-    BB wKnights();
-    BB wBishops();
-    BB wRooks();
-    BB wQueens();
+    BB wPawns() const;
+    BB wKnights() const;
+    BB wBishops() const;
+    BB wRooks() const;
+    BB wQueens() const;
     BB wKings();
-    BB bPawns();
-    BB bKnights();
-    BB bBishops();
-    BB bRooks();
-    BB bQueens();
+    BB bPawns() const;
+    BB bKnights() const;
+    BB bBishops() const;
+    BB bRooks() const;
+    BB bQueens() const;
     BB bKings();
     BB wbEmpty();
     BB wbEnemy(boardID side);
