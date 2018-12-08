@@ -5,6 +5,7 @@
 #include "Perft.h"
 #include "Searcher.h"
 #include "AssertionFailure.h"
+#include "Bitboard.h"
 
 using BB = std::bitset<64>; ///BB = Bit board. BB[0] = a8, BB[1] = b8, BB[8] = a7
 
@@ -135,6 +136,19 @@ void ab_test(int trials){
     std::cout << "Average time per search was " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/trials << " milliseconds." << std::endl;
 }
 
+void bitboard_test(){
+    Bitboard bb(0b01000010'01000010'00100010'00011110'00100010'01000010'01000010'00111110);
+    std::cout << bb << std::endl << std::endl;
+    bb.sym_rot_ccw();
+    std::cout << bb << std::endl << std::endl;
+    bb.sym_rot_ccw();
+    std::cout << bb << std::endl << std::endl;
+    bb.sym_rot_ccw();
+    std::cout << bb << std::endl << std::endl;
+    bb.sym_rot_ccw();
+    std::cout << bb << std::endl << std::endl;
+}
+
 int main() {
-    ab_test(10);
+    bitboard_test();
 }
