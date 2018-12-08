@@ -2,7 +2,7 @@
 #include "Bitboard.h"
 #include "AssertionFailure.h"
 
-bool Bitboard::test(int index) const {
+bool Bitboard::test(int64_t index) const {
     switch (index){
         case  0: return (data & 0b0000000000000000000000000000000000000000000000000000000000000001) != 0;
         case  1: return (data & 0b0000000000000000000000000000000000000000000000000000000000000010) != 0;
@@ -72,7 +72,7 @@ bool Bitboard::test(int index) const {
     }
 }
 
-void Bitboard::set(int index, bool value) {
+void Bitboard::set(int64_t index, bool value) {
     if(value) {
         switch (index) {
             case  0: data |= 0b0000000000000000000000000000000000000000000000000000000000000001; return;
@@ -220,7 +220,7 @@ std::vector<int> Bitboard::positions() const {
     while(tmp != 0){
         int pos = __builtin_ffsll(tmp) - 1;
         out.push_back(pos);
-        tmp &= ~(1<<pos);
+        tmp &= ~(1ull<<pos);
     }
     return out;
 }

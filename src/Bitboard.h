@@ -22,13 +22,19 @@ public: //Data accessors and asymmetric modifiers
      * @return true iff the specified bit is set, false otherwise
      * @asserts 0 <= index <= 63
      */
-    bool test(int index) const;
+    bool test(int64_t index) const;
 
     /**
      * Tests if any bit is set
      * @return true iff any bit is set, false otherwise
      */
-    bool test() const noexcept { return data != 0;};
+    bool any() const noexcept { return data != 0;};
+
+    /**
+     * Tests if all bits are set
+     * @return true iff all bits are set, false otherwise
+     */
+    bool all() const noexcept { return data == 0xFFFFFFFFFFFFFFFFull;};
 
     /**
      * Sets the bit at a given index if the passed in value is true, resets the bit otherwise.
@@ -37,7 +43,7 @@ public: //Data accessors and asymmetric modifiers
      * @asserts 0 <= index <= 63
      * @modifies data
      */
-    void set(int index, bool value = true);
+    void set(int64_t index, bool value = true);
 
     /**
      * Sets all bits.
@@ -51,7 +57,7 @@ public: //Data accessors and asymmetric modifiers
      * @asserts 0 <= index <= 63
      * @modifies data
      */
-    void reset(int index){ set(index, false); };
+    void reset(int64_t index){ set(index, false); };
 
     /**
      * Resets all bits.
@@ -65,7 +71,7 @@ public: //Data accessors and asymmetric modifiers
      * @asserts 0 <= index <= 63
      * @modifies data
      */
-    void flip(int index){ set(index, !test(index)); };
+    void flip(int64_t index){ set(index, !test(index)); };
 
     /**
      * Flips all bits.

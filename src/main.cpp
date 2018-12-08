@@ -7,18 +7,7 @@
 #include "AssertionFailure.h"
 #include "Bitboard.h"
 
-using BB = std::bitset<64>; ///BB = Bit board. BB[0] = a8, BB[1] = b8, BB[8] = a7
 
-std::string bb_to_string(BB in){
-    std::string out;
-    for(int i = 0; i < 8; i++){
-        for(int j = 0; j < 8; j++) {
-            out+=in[i*8+j]?"X":".";
-        }
-        out+="\n";
-    }
-    return out;
-}
 
 Board apply_moves(Board in, std::list<Move> moves){
     Board out(in);
@@ -82,14 +71,6 @@ std::list<perft_divide_pair> perft_divide(Board board, int depth){
     return out;
 }
 
-BB str_to_bb(std::string str){
-    BB out;
-    for (unsigned long int i = 0; i < str.length(); ++i) {
-        out[i] = str[i]=='1';
-    }
-    return out;
-}
-
 void pd_test(Board board, int depth){
     auto pd = perft_divide(board, depth);
     size_t sum = 0;
@@ -107,30 +88,20 @@ void p_test(const Board &board, int depth){
 
 void sanity(){
     for(auto i = 0; i < 8; i++){
-        std::cout << bb_to_string(Board::lookup_rank(i)) << std::endl;
+        std::cout << Board::lookup_rank(i).to_string() << std::endl;
     }
     for(auto i = 0; i < 8; i++){
-        std::cout << bb_to_string(Board::lookup_file(i)) << std::endl;
+        std::cout << Board::lookup_file(i).to_string() << std::endl;
     }
 }
 
-void byte_swap(){
-    Board board("1krnbn2/1q4b1/1p4r1/1p3p2/1BPPP3/1N3R2/1Q4B1/1K4R1 w - -");
-    std::cout << board.to_string() << std::endl << std::endl;
-    for(auto i = 0; i < 8; i++){
-        board.pieceBB[i] = __builtin_bswap64(board.pieceBB[i].to_ullong());
-    }
-    std::cout << board.to_string() << std::endl;
-}
-
-void ab_test(int trials){
+void ab_test(int trials, int depth){
     auto start = std::chrono::steady_clock::now();
     for (int i = 1; i <= trials; ++i) {
         Board board;
         board.set_state_new();
         Searcher searcher(board);
-        searcher.get_best_move(5, false);
-        std::cout << ((i*100)/trials) << '%' << std::endl;
+        std::cout << searcher.get_best_move(depth, false).to_string() << '\t' << ((i*100)/trials) << '%' << std::endl;
     }
     auto end = std::chrono::steady_clock::now();
     std::cout << "Average time per search was " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/trials << " milliseconds." << std::endl;
@@ -150,5 +121,5 @@ void bitboard_test(){
 }
 
 int main() {
-    bitboard_test();
+    ab_test(3,3);
 }

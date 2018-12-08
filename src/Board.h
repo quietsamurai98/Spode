@@ -7,10 +7,10 @@
 #include "AssertionFailure.h"
 #include "Move.h"
 #include "Util.h"
+#include "Bitboard.h"
 
 class Board {
 public: //Type aliases and definitions
-    using BB = std::bitset<64>; ///BB = Bit board. BB[0] = a8, BB[1] = b8, BB[8] = a7
     using CR = uint8_t; ///CR = Castle rights. CR&0b00001000 = white long castle, CR&0b00000001 = black short castle
     using EP = uint8_t; ///EP = En passant target exists. 1 = exists, 0 = not exists
     using PF = uint8_t; ///PF = En passant target file. 0 = a, 7 = h
@@ -32,23 +32,25 @@ public: //Type aliases and definitions
         kingBB  = 7
     };
 
-public: //BB lookup
+public: //Bitboard lookup
+    ///TODO: Make these Bitboard member functions
+
     /**
-     * Gets a BB where each square is set iff it is in the specified rank/row.
+     * Gets a Bitboard where each square is set iff it is in the specified rank/row.
      * NOTE: rank must be on interval [0..7]. 0 -> top row, 7 -> bottom row.
      */
-    static BB lookup_rank(int8_t rank){
+    static Bitboard lookup_rank(int8_t rank){
         ASSERT(Util::on_range(rank, 0, 7), "RANK MUST BE ON INTERVAL [0..7]");
-        return BB(0xffULL << (rank << 3));
+        return Bitboard(0xffULL << (rank << 3));
     }
 
-    static BB lookup_file(int8_t file){
+    static Bitboard lookup_file(int8_t file){
         ASSERT(Util::on_range(file, 0, 7), "FILE MUST BE ON INTERVAL [0..7]");
-        return BB(0x0101010101010101ULL << file);
+        return Bitboard(0x0101010101010101ULL << file);
     }
 
 public: //Member variables
-    BB pieceBB[8];
+    Bitboard pieceBB[8];
     State state;
 
 public: //Constructors, destructors, instance counter
@@ -71,7 +73,7 @@ public: //Operations
      * @param side
      * @return
      */
-    bool square_under_attack(uint8_t square, boardID side) /*const*/;
+    bool square_under_attack(int64_t square, boardID side) /*const*/;
 
     std::list<Move> get_moves(bool tactical_only = false);
     bool in_checkmate() /*const*/;
@@ -80,36 +82,36 @@ public: //Operations
     bool sanity_check() const;
 
 public: //Bit board generators
-    BB wPawns() /*const*/;
-    BB wKnights() /*const*/;
-    BB wBishops() /*const*/;
-    BB wRooks() /*const*/;
-    BB wQueens() /*const*/;
-    BB wKings() /*const*/;
-    BB bPawns() /*const*/;
-    BB bKnights() /*const*/;
-    BB bBishops() /*const*/;
-    BB bRooks() /*const*/;
-    BB bQueens() /*const*/;
-    BB bKings() /*const*/;
-    BB wbEmpty() /*const*/;
-    BB wbEnemy(boardID side) /*const*/;
-    BB passantTarget() /*const*/;
+    Bitboard wPawns() /*const*/;
+    Bitboard wKnights() /*const*/;
+    Bitboard wBishops() /*const*/;
+    Bitboard wRooks() /*const*/;
+    Bitboard wQueens() /*const*/;
+    Bitboard wKings() /*const*/;
+    Bitboard bPawns() /*const*/;
+    Bitboard bKnights() /*const*/;
+    Bitboard bBishops() /*const*/;
+    Bitboard bRooks() /*const*/;
+    Bitboard bQueens() /*const*/;
+    Bitboard bKings() /*const*/;
+    Bitboard wbEmpty() /*const*/;
+    Bitboard wbEnemy(boardID side) /*const*/;
+    Bitboard passantTarget() /*const*/;
 
-    BB quiet_pawn(uint8_t src, boardID side) /*const*/;
-    BB quiet_knight(uint8_t src, boardID side) /*const*/;
-    BB quiet_bishop(uint8_t src, boardID side) /*const*/;
-    BB quiet_rook(uint8_t src, boardID side) /*const*/;
-    BB quiet_queen(uint8_t src, boardID side) /*const*/;
-    BB quiet_king(uint8_t src, boardID side) /*const*/;
-    BB castle_king(uint8_t src, boardID side) /*const*/;
+    Bitboard quiet_pawn(uint8_t src, boardID side) /*const*/;
+    Bitboard quiet_knight(uint8_t src, boardID side) /*const*/;
+    Bitboard quiet_bishop(uint8_t src, boardID side) /*const*/;
+    Bitboard quiet_rook(uint8_t src, boardID side) /*const*/;
+    Bitboard quiet_queen(uint8_t src, boardID side) /*const*/;
+    Bitboard quiet_king(uint8_t src, boardID side) /*const*/;
+    Bitboard castle_king(uint8_t src, boardID side) /*const*/;
 
-    BB tactical_pawn(uint8_t src, boardID side) /*const*/;
-    BB tactical_knight(uint8_t src, boardID side) /*const*/;
-    BB tactical_bishop(uint8_t src, boardID side) /*const*/;
-    BB tactical_rook(uint8_t src, boardID side) /*const*/;
-    BB tactical_queen(uint8_t src, boardID side) /*const*/;
-    BB tactical_king(uint8_t src, boardID side) /*const*/;
+    Bitboard tactical_pawn(int64_t src, boardID side) /*const*/;
+    Bitboard tactical_knight(int64_t src, boardID side) /*const*/;
+    Bitboard tactical_bishop(int64_t src, boardID side) /*const*/;
+    Bitboard tactical_rook(int64_t src, boardID side) /*const*/;
+    Bitboard tactical_queen(uint8_t src, boardID side) /*const*/;
+    Bitboard tactical_king(int64_t src, boardID side) /*const*/;
 
     /**
      * Finds the pseudo legal move destinations for the piece belonging to the specified side at the specified source square.
@@ -118,7 +120,7 @@ public: //Bit board generators
      * @param side
      * @return
      */
-    BB find_dests(uint8_t src, boardID side) /*const*/;
+    Bitboard find_dests(uint8_t src, boardID side) /*const*/;
 };
 
 #endif //SPODE_BOARD_H
