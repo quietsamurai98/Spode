@@ -128,7 +128,7 @@ void ab_test(int trials){
         Board board;
         board.set_state_new();
         Searcher searcher(board);
-        searcher.get_best_move(7, false);
+        searcher.get_best_move(5, false);
         std::cout << ((i*100)/trials) << '%' << std::endl;
     }
     auto end = std::chrono::steady_clock::now();

@@ -35,7 +35,7 @@ Searcher::score_t Searcher::evaluate_node(Searcher::Node * const n) {
     return score;
 }
 
-Searcher::score_t Searcher::heuristic_eval(Board const board){
+Searcher::score_t Searcher::heuristic_eval(Board board){
     /**
      * This method is the soul of Spode. It evaluates how "good" a non-terminal game state is.
      * More negative scores indicate better game states for black, while more positive scores indicate better

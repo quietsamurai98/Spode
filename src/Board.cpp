@@ -153,59 +153,59 @@ Board::Board(std::string const fen){
 
 Board::~Board() = default;
 
-BB Board::wPawns() const {
+BB Board::wPawns() /*const*/ {
     return pieceBB[pawnBB] & pieceBB[whiteBB];
 }
 
-BB Board::wKnights() const {
+BB Board::wKnights() /*const*/ {
     return pieceBB[knightBB] & pieceBB[whiteBB];
 }
 
-BB Board::wBishops() const {
+BB Board::wBishops() /*const*/ {
     return pieceBB[bishopBB] & pieceBB[whiteBB];
 }
 
-BB Board::wRooks() const {
+BB Board::wRooks() /*const*/ {
     return pieceBB[rookBB] & pieceBB[whiteBB];
 }
 
-BB Board::wQueens() const {
+BB Board::wQueens() /*const*/ {
     return pieceBB[queenBB] & pieceBB[whiteBB];
 }
 
-BB Board::wKings() const {
+BB Board::wKings() /*const*/ {
     return pieceBB[kingBB] & pieceBB[whiteBB];
 }
 
-BB Board::bPawns() const {
+BB Board::bPawns() /*const*/ {
     return pieceBB[pawnBB] & pieceBB[blackBB];
 }
 
-BB Board::bKnights() const {
+BB Board::bKnights() /*const*/ {
     return pieceBB[knightBB] & pieceBB[blackBB];
 }
 
-BB Board::bBishops() const {
+BB Board::bBishops() /*const*/ {
     return pieceBB[bishopBB] & pieceBB[blackBB];
 }
 
-BB Board::bRooks() const {
+BB Board::bRooks() /*const*/ {
     return pieceBB[rookBB] & pieceBB[blackBB];
 }
 
-BB Board::bQueens() const {
+BB Board::bQueens() /*const*/ {
     return pieceBB[queenBB] & pieceBB[blackBB];
 }
 
-BB Board::bKings() const {
+BB Board::bKings() /*const*/ {
     return pieceBB[kingBB] & pieceBB[blackBB];
 }
 
-BB Board::wbEmpty() const {
+BB Board::wbEmpty() /*const*/ {
     return ~pieceBB[whiteBB] & ~pieceBB[blackBB];
 }
 
-BB Board::wbEnemy(boardID side) const {
+BB Board::wbEnemy(boardID side) /*const*/ {
     if(side == whiteBB){
         return pieceBB[blackBB];
     } else {
@@ -213,7 +213,7 @@ BB Board::wbEnemy(boardID side) const {
     }
 }
 
-BB Board::passantTarget() const {
+BB Board::passantTarget() /*const*/ {
     BB out;
     if(state.passant_exist) {
         if (state.side == 1) {
@@ -444,7 +444,7 @@ std::string Board::to_string() const{
     return out;
 }
 
-std::list<Move> Board::get_moves(bool tactical_only) const {
+std::list<Move> Board::get_moves(bool tactical_only) /*const*/ {
     boardID side = (state.side == 0)?(whiteBB):(blackBB);
     BB sideBB = pieceBB[side];
     BB enemBB = wbEnemy(side);
@@ -489,14 +489,14 @@ std::list<Move> Board::get_moves(bool tactical_only) const {
 }
 
 
-bool Board::in_checkmate() const {
+bool Board::in_checkmate() /*const*/ {
     //If there are no legal moves, and the king is in check, that's a checkmate.
     BB king = (pieceBB[(state.side == 0)?(whiteBB):(blackBB)]&pieceBB[kingBB]);
     uint8_t kingPos = 0;
     for(kingPos = 0; kingPos<64 && king[kingPos]==false; kingPos++){}
     return square_under_attack(kingPos, (state.side == 0)?(whiteBB):(blackBB)) && get_moves().empty();
 }
-bool Board::in_stalemate() const {
+bool Board::in_stalemate() /*const*/ {
     //If there are no legal moves, and the king is not in check, that's a stalemate.
     BB king = (pieceBB[(state.side == 0)?(whiteBB):(blackBB)]&pieceBB[kingBB]);
     uint8_t kingPos = 0;
@@ -504,7 +504,7 @@ bool Board::in_stalemate() const {
     return !square_under_attack(kingPos, (state.side == 0)?(whiteBB):(blackBB)) && get_moves().empty();
 }
 
-BB Board::quiet_pawn(uint8_t src, boardID side) const {
+BB Board::quiet_pawn(uint8_t src, boardID side) /*const*/ {
     auto move_offset = (int8_t)((side == whiteBB) ? -8 : 8);
     auto home_rank = (uint8_t)((side==whiteBB)?6:1);
     BB valid = wbEmpty();
@@ -515,7 +515,7 @@ BB Board::quiet_pawn(uint8_t src, boardID side) const {
     }
     return out;
 }
-BB Board::quiet_knight(uint8_t src, boardID) const {
+BB Board::quiet_knight(uint8_t src, boardID) /*const*/ {
     BB valid = wbEmpty();
     BB out;
     // .A.B.
@@ -550,7 +550,7 @@ BB Board::quiet_knight(uint8_t src, boardID) const {
     out &= valid;
     return out;
 }
-BB Board::quiet_bishop(uint8_t src, boardID) const {
+BB Board::quiet_bishop(uint8_t src, boardID) /*const*/ {
     BB out;
     BB valid = wbEmpty();
     int src_r = src/8;
@@ -571,7 +571,7 @@ BB Board::quiet_bishop(uint8_t src, boardID) const {
 
     return out;
 }
-BB Board::quiet_rook(uint8_t src, boardID) const {
+BB Board::quiet_rook(uint8_t src, boardID) /*const*/ {
     BB out;
     BB valid = wbEmpty();
     int src_r = src/8;
@@ -592,11 +592,11 @@ BB Board::quiet_rook(uint8_t src, boardID) const {
 
     return out;
 }
-BB Board::quiet_queen(uint8_t src, boardID side) const {
+BB Board::quiet_queen(uint8_t src, boardID side) /*const*/ {
     return quiet_bishop(src, side) | quiet_rook(src, side);
 }
 
-BB Board::quiet_king(uint8_t src, boardID side) const {
+BB Board::quiet_king(uint8_t src, boardID side) /*const*/ {
     bool north = src > 7;
     bool south = src < 56;
     bool east = src%8 < 7;
@@ -632,7 +632,7 @@ BB Board::quiet_king(uint8_t src, boardID side) const {
     return out;
 }
 
-BB Board::castle_king(uint8_t src, boardID side) const {
+BB Board::castle_king(uint8_t src, boardID side) /*const*/ {
     BB out;
     BB empty = wbEmpty();
     if(side == whiteBB && src == 60){
@@ -656,7 +656,7 @@ BB Board::castle_king(uint8_t src, boardID side) const {
     }
     return out;
 }
-BB Board::tactical_pawn(uint8_t src, boardID side) const {
+BB Board::tactical_pawn(uint8_t src, boardID side) /*const*/ {
     auto move_offset = (int8_t)((side == whiteBB) ? -8 : 8);
     BB out;
     BB valid = wbEnemy(side);
@@ -671,7 +671,7 @@ BB Board::tactical_pawn(uint8_t src, boardID side) const {
     }
     return out;
 }
-BB Board::tactical_knight(uint8_t src, boardID side) const {
+BB Board::tactical_knight(uint8_t src, boardID side) /*const*/ {
     BB valid = wbEnemy(side);
     BB out;
     // .A.B.
@@ -706,7 +706,7 @@ BB Board::tactical_knight(uint8_t src, boardID side) const {
     out &= valid;
     return out;
 }
-BB Board::tactical_bishop(uint8_t src, boardID side) const {
+BB Board::tactical_bishop(uint8_t src, boardID side) /*const*/ {
     BB out;
     BB valid = wbEnemy(side);
     BB empty = wbEmpty();
@@ -743,7 +743,7 @@ BB Board::tactical_bishop(uint8_t src, boardID side) const {
 
     return out;
 }
-BB Board::tactical_rook(uint8_t src, boardID side) const {
+BB Board::tactical_rook(uint8_t src, boardID side) /*const*/ {
     BB out;
     BB valid = wbEnemy(side);
     BB empty = wbEmpty();
@@ -780,11 +780,11 @@ BB Board::tactical_rook(uint8_t src, boardID side) const {
 
     return out;
 }
-BB Board::tactical_queen(uint8_t src, boardID side) const {
+BB Board::tactical_queen(uint8_t src, boardID side) /*const*/ {
     return tactical_rook(src, side) | tactical_bishop(src, side);
 }
 
-BB Board::tactical_king(uint8_t src, boardID side) const {
+BB Board::tactical_king(uint8_t src, boardID side) /*const*/ {
     bool north = src > 7;
     bool south = src < 56;
     bool east = src%8 < 7;
@@ -819,7 +819,7 @@ BB Board::tactical_king(uint8_t src, boardID side) const {
     return out;
 }
 
-bool Board::square_under_attack(uint8_t square, boardID side) const {
+bool Board::square_under_attack(uint8_t square, boardID side) /*const*/ {
     BB attacks;
     attacks|=tactical_pawn(square, side)&pieceBB[pawnBB];
     attacks|=tactical_bishop(square, side)&(pieceBB[bishopBB] | pieceBB[queenBB]);
@@ -830,7 +830,7 @@ bool Board::square_under_attack(uint8_t square, boardID side) const {
     return attacks.any();
 }
 
-BB Board::find_dests(uint8_t src, boardID side) const {
+BB Board::find_dests(uint8_t src, boardID side) /*const*/ {
     if(pieceBB[side][src]){ ///src square occupied by specified side
         if(pieceBB[pawnBB][src]){
             return tactical_pawn(src, side) | quiet_pawn(src, side);
