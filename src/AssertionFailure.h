@@ -8,7 +8,7 @@
 
 class AssertionFailure{
 public:
-    AssertionFailure(const char* expr, const char* msg, const char* file, const int line, const char* func){
+    static void assert(const char* expr, const char* msg, const char* file, const int line, const char* func){
         std::stringstream ss;
         ss << "Assertion failed! ("<<func<<"@"<<file<<":"<<line<<")\n";
         ss << "\tAssertion condition:\t\"" << expr << "\"\n";
@@ -22,7 +22,7 @@ public:
         throw std::runtime_error(ss.str().c_str());
     }
 
-    AssertionFailure(const char* msg, const char* file, const int line, const char* func){
+    static void asserted_failure(const char* msg, const char* file, const int line, const char* func){
         std::stringstream ss;
         ss << "A failure state was asserted! ("<<func<<"@"<<file<<":"<<line<<")\n";
         std::string msg_str = std::string(msg);
@@ -41,7 +41,7 @@ public:
 #error "ASSERT macro already defined!"
 #else
 #ifndef DISABLE_ASSERT //Disabling assertions will increase performance, but will potentially allow the program to enter into invalid states.
-#define ASSERT(expr, msg) if(!(expr)){AssertionFailure(#expr, msg, __FILE__, __LINE__, __PRETTY_FUNCTION__);} (void)0
+#define ASSERT(expr, msg) if(!(expr)){AssertionFailure::assert(#expr, msg, __FILE__, __LINE__, __PRETTY_FUNCTION__);} (void)0
 #else
 #define ASSERT(expr, msg) (void)0
 #endif
@@ -51,7 +51,7 @@ public:
 #error "ASSERT_FAIL macro already defined!"
 #else
 #ifndef DISABLE_ASSERT_FAIL //There is no reason for ASSERT_FAILs to be disabled, as they are only ever callable when the program has entered into a known invalid state.
-#define ASSERT_FAIL(msg) AssertionFailure(msg, __FILE__, __LINE__, __PRETTY_FUNCTION__); exit(-1)
+#define ASSERT_FAIL(msg) AssertionFailure::asserted_failure(msg, __FILE__, __LINE__, __PRETTY_FUNCTION__); exit(-1)
 #else
 #define ASSERT_FAIL(MSG) (void)0
 #endif

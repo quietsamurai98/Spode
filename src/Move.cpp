@@ -90,7 +90,7 @@ Move::Move(std::string an) {
     }
 }
 
-std::string Move::to_string() {
+std::string Move::to_string() const {
     if(null_move == 1){
         return "0000";
     }

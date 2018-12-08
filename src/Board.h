@@ -62,8 +62,8 @@ public: //State initializers
     void set_state_new(); //New game
 
 public: //Operations
-    Board make_move(Move move);
-    std::string to_string();
+    Board make_move(Move move) const;
+    std::string to_string() const;
 
     /**
      * Determines if the OTHER side could take the specified square
@@ -71,13 +71,13 @@ public: //Operations
      * @param side
      * @return
      */
-    bool square_under_attack(uint8_t square, boardID side);
+    bool square_under_attack(uint8_t square, boardID side) const;
 
-    std::list<Move> get_moves(bool tactical_only = false);
-    bool in_checkmate();
-    bool in_stalemate();
+    std::list<Move> get_moves(bool tactical_only = false) const;
+    bool in_checkmate() const;
+    bool in_stalemate() const;
 
-    bool sanity_check();
+    bool sanity_check() const;
 
 public: //Bit board generators
     BB wPawns() const;
@@ -85,31 +85,31 @@ public: //Bit board generators
     BB wBishops() const;
     BB wRooks() const;
     BB wQueens() const;
-    BB wKings();
+    BB wKings() const;
     BB bPawns() const;
     BB bKnights() const;
     BB bBishops() const;
     BB bRooks() const;
     BB bQueens() const;
-    BB bKings();
-    BB wbEmpty();
-    BB wbEnemy(boardID side);
-    BB passantTarget();
+    BB bKings() const;
+    BB wbEmpty() const;
+    BB wbEnemy(boardID side) const;
+    BB passantTarget() const;
 
-    BB quiet_pawn(uint8_t src, boardID side);
-    BB quiet_knight(uint8_t src, boardID side);
-    BB quiet_bishop(uint8_t src, boardID side);
-    BB quiet_rook(uint8_t src, boardID side);
-    BB quiet_queen(uint8_t src, boardID side);
-    BB quiet_king(uint8_t src, boardID side);
-    BB castle_king(uint8_t src, boardID side);
+    BB quiet_pawn(uint8_t src, boardID side) const;
+    BB quiet_knight(uint8_t src, boardID side) const;
+    BB quiet_bishop(uint8_t src, boardID side) const;
+    BB quiet_rook(uint8_t src, boardID side) const;
+    BB quiet_queen(uint8_t src, boardID side) const;
+    BB quiet_king(uint8_t src, boardID side) const;
+    BB castle_king(uint8_t src, boardID side) const;
 
-    BB tactical_pawn(uint8_t src, boardID side);
-    BB tactical_knight(uint8_t src, boardID side);
-    BB tactical_bishop(uint8_t src, boardID side);
-    BB tactical_rook(uint8_t src, boardID side);
-    BB tactical_queen(uint8_t src, boardID side);
-    BB tactical_king(uint8_t src, boardID side);
+    BB tactical_pawn(uint8_t src, boardID side) const;
+    BB tactical_knight(uint8_t src, boardID side) const;
+    BB tactical_bishop(uint8_t src, boardID side) const;
+    BB tactical_rook(uint8_t src, boardID side) const;
+    BB tactical_queen(uint8_t src, boardID side) const;
+    BB tactical_king(uint8_t src, boardID side) const;
 
     /**
      * Finds the pseudo legal move destinations for the piece belonging to the specified side at the specified source square.
@@ -118,7 +118,7 @@ public: //Bit board generators
      * @param side
      * @return
      */
-    BB find_dests(uint8_t src, boardID side);
+    BB find_dests(uint8_t src, boardID side) const;
 };
 
 #endif //SPODE_BOARD_H

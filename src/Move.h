@@ -23,7 +23,7 @@ public:
     uint8_t dest : 6;
     uint8_t promo_enabled : 1;
     uint8_t null_move : 1;
-    std::string to_string();
+    std::string to_string() const;
 };
 
 
