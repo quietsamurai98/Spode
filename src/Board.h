@@ -60,8 +60,8 @@ public: //Constructors, destructors, instance counter
     Board(const Board &other);
     ~Board();
 
-public: //State initializers
-    void set_state_new(); //New game
+public: //Special boards
+    static Board new_game();
 
 public: //Operations
     Board make_move(Move move) const;

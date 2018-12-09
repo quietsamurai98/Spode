@@ -5,12 +5,13 @@
 
 #include <exception>
 #include <sstream>
+#include <iostream>
 
 class AssertionFailure{
 public:
     static void assert(const char* expr, const char* msg, const char* file, const int line, const char* func){
         std::stringstream ss;
-        ss << "Assertion failed! ("<<func<<"@"<<file<<":"<<line<<")\n";
+        ss << "An assertion failed! ("<<func<<"@"<<file<<":"<<line<<")\n";
         ss << "\tAssertion condition:\t\"" << expr << "\"\n";
         std::string msg_str = std::string(msg);
         auto pos = msg_str.find('\n');
@@ -19,12 +20,13 @@ public:
             pos = msg_str.find('\n', pos+3);
         }
         ss << "\tDetails:\n\t\t" << msg_str;
-        throw std::runtime_error(ss.str().c_str());
+        std::cerr << ss.str() << std::endl;
+        abort();
     }
 
     static void asserted_failure(const char* msg, const char* file, const int line, const char* func){
         std::stringstream ss;
-        ss << "A failure state was asserted! ("<<func<<"@"<<file<<":"<<line<<")\n";
+        ss << "The program has assumed a state that should not be reachable! ("<<func<<"@"<<file<<":"<<line<<")\n";
         std::string msg_str = std::string(msg);
         auto pos = msg_str.find('\n');
         while(pos != std::string::npos){
@@ -32,7 +34,8 @@ public:
             pos = msg_str.find('\n', pos+3);
         }
         ss << "\tDetails:\n\t\t" << msg_str;
-        throw std::runtime_error(ss.str().c_str());
+        std::cerr << ss.str() << std::endl;
+        abort();
     }
 
 };

@@ -23,6 +23,7 @@ public: //Data accessors and asymmetric modifiers
      * @asserts 0 <= index <= 63
      */
     bool test(int64_t index) const;
+    bool literal_test(int64_t index) const;
 
     /**
      * Tests if any bit is set
@@ -44,6 +45,7 @@ public: //Data accessors and asymmetric modifiers
      * @modifies data
      */
     void set(int64_t index, bool value = true);
+    void literal_set(int64_t index, bool value = true);
 
     /**
      * Sets all bits.

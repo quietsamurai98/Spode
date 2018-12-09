@@ -20,16 +20,8 @@ Searcher::score_t Searcher::evaluate_node(Searcher::Node * const n) {
     Board board = get_board(n);
     score_t score = 0;
 
-    if(board.in_checkmate()){
-        //If the white player is in checkmate, MINUS_INFINITY. If the black player is in checkmate, PLUS_INFINITY
-        score = (board.state.side == 0)?MINUS_INFINITY:PLUS_INFINITY;
-    } else if (board.in_stalemate()){
-        //Stalemate = draw.
-        score = 0;
-    } else {
-        //Game state must be evaluated based on a heuristic.
-        score = heuristic_eval(board);
-    }
+    score = heuristic_eval(board);
+
     n -> score = score;
     n -> evaluated = true;
     return score;
@@ -41,6 +33,10 @@ Searcher::score_t Searcher::heuristic_eval(Board board){
      * More negative scores indicate better game states for black, while more positive scores indicate better
      * game states for white.
      */
+
+    if(board.in_checkmate()){
+        return board.state.side==0 ? MINUS_INFINITY : PLUS_INFINITY;
+    }
 
     /**
      * VERSION 1.0: (White centipawn score) - (Black centipawn score)
@@ -97,9 +93,9 @@ void Searcher::populate_node(Searcher::Node * const n) {
 }
 
 Move Searcher::get_best_move(int const depth, bool const quiescence_mode) {
-    ASSERT(depth != 0, "\"What are you, f**king stupid?\" -- George Carlin");
-    ASSERT(!initial_board.in_checkmate(), "The game was rigged from the start.");
-    ASSERT(!initial_board.in_stalemate(), "The only winning move is not to play.");
+    ASSERT(depth > 0, "How am I supposed to search for a move if I can't look at my options‽");
+    ASSERT(!initial_board.in_checkmate(), "You already won, no need to rub it in...");
+    ASSERT(!initial_board.in_stalemate(), "The only winning move is not to play... How about a nice game of-- oh.");
     return negamax_alpha_beta(depth, quiescence_mode);
 }
 
@@ -108,20 +104,18 @@ Move Searcher::negamax_alpha_beta(int const depth, bool const quiescence_mode) {
     score_t alpha = MINUS_INFINITY;
     score_t beta  = PLUS_INFINITY;
     populate_node(n);
-    score_t max_score = MINUS_INFINITY;
-    Move    max_move;
-    for(Node m : n->children){
-        score_t tmp = -negamax_alpha_beta(&m, depth-1, -beta, -alpha, quiescence_mode);
-        if(tmp > max_score){
-            max_score = tmp;
-            max_move = Move(m.move);
-        }
-        alpha = (alpha>max_score)?alpha:max_score;
-        if(alpha>=beta){
-            break; //Cutoff
+    Move best_move;
+    score_t best_score = MINUS_INFINITY*2;
+
+    for(Node c : n->children) {
+        auto c_score = -negamax_alpha_beta(n, depth, alpha, beta, quiescence_mode);
+        if(c_score > best_score){
+            best_score = c_score;
+            best_move = c.move;
         }
     }
-    return max_move;
+
+    return best_move;
 }
 
 Searcher::score_t Searcher::negamax_alpha_beta(Searcher::Node * const n, int const depth, Searcher::score_t alpha, Searcher::score_t beta, bool const quiescence_mode) {
@@ -136,15 +130,16 @@ Searcher::score_t Searcher::negamax_alpha_beta(Searcher::Node * const n, int con
         }
     }
     populate_node(n);
-
-    score_t max_score = MINUS_INFINITY;
+    score_t max_score = MINUS_INFINITY*2;
     for(Node m : n->children){
         score_t tmp = -negamax_alpha_beta(&m, depth-1, -beta, -alpha, quiescence_mode);
         if(tmp > max_score){
             max_score = tmp;
         }
-        alpha = (alpha>max_score)?alpha:max_score;
-        if(alpha>=beta){
+        if (max_score > alpha) {
+            alpha = max_score;
+        }
+        if(max_score >= beta){
             break; //Cutoff
         }
     }

@@ -11,6 +11,10 @@ using SM = uint8_t; ///SM = Side to move. 0 = white, 1 = black.
 
 uintmax_t Board::count = 0;
 
+Board Board::new_game() {
+    return Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+}
+
 Board::Board() = default;
 
 Board::Board(const Board &other) {
@@ -224,18 +228,6 @@ Bitboard Board::passantTarget() /*const*/ {
         }
     }
     return out;
-}
-
-void Board::set_state_new() {
-    state = {0b1111, 0b0, 0b0, 0b0};
-    pieceBB[whiteBB] = 0xffff000000000000;
-    pieceBB[blackBB] = 0x000000000000ffff;
-    pieceBB[pawnBB]  = 0x00ff00000000ff00;
-    pieceBB[rookBB]  = 0x8100000000000081;
-    pieceBB[knightBB]= 0x4200000000000042;
-    pieceBB[bishopBB]= 0x2400000000000024;
-    pieceBB[queenBB] = 0x0800000000000008;
-    pieceBB[kingBB]  = 0x1000000000000010;
 }
 
 Board Board::make_move(Move move) const{
